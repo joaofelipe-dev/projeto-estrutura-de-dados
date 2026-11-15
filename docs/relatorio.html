@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Relatório técnico — BST e lista encadeada</title>
+<style>
+  @page { size: A4; margin: 20mm 18mm 18mm 18mm; }
+  body {
+    font-family: "Georgia", "Times New Roman", serif;
+    font-size: 11pt;
+    line-height: 1.5;
+    color: #1a1a1a;
+    text-align: justify;
+  }
+  h1 { font-size: 17pt; margin: 0 0 4px 0; line-height: 1.25; }
+  .cabecalho { font-size: 9.5pt; color: #555; margin-bottom: 18px; border-bottom: 1px solid #bbb; padding-bottom: 10px; }
+  h2 { font-size: 12.5pt; margin: 20px 0 6px 0; border-left: 3px solid #333; padding-left: 8px; }
+  h3 { font-size: 11pt; margin: 14px 0 4px 0; }
+  p { margin: 0 0 8px 0; }
+  ul { margin: 0 0 8px 0; padding-left: 22px; }
+  li { margin-bottom: 3px; }
+  code { font-family: "Consolas", monospace; font-size: 9.5pt; background: #f2f2f2; padding: 0 2px; }
+  pre {
+    font-family: "Consolas", monospace;
+    font-size: 9pt;
+    line-height: 1.35;
+    background: #f7f7f7;
+    border-left: 3px solid #999;
+    padding: 8px 10px;
+    margin: 6px 0 10px 0;
+    white-space: pre-wrap;
+    text-align: left;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin: 6px 0 12px 0; page-break-inside: avoid; }
+  th, td { border: 1px solid #bbb; padding: 5px 7px; text-align: left; vertical-align: top; }
+  th { background: #eee; }
+  .quebra { page-break-before: always; }
+  .nota { font-size: 9.5pt; color: #444; }
+</style>
+</head>
+<body>
+
+<h1>Árvore binária de busca e lista encadeada para cadastro de equipamentos de rede</h1>
+<div class="cabecalho">
+  FATEC Ribeirão Preto · ADS — 3º semestre · Estrutura de Dados · Prof. Me. Heber Castro<br>
+  Aluno: João Felipe · Tema A (equipamentos de rede) · Linguagem C11
+</div>
+
+<h2>1. Tema e modelagem dos dados</h2>
+<p>
+O trabalho implementa o tema A, com registros de equipamentos de rede. Cada registro possui
+identificador inteiro positivo, nome do equipamento, tipo e localização. O identificador é a chave
+de ordenação da árvore binária de busca e deve ser único; os três campos de texto são armazenados em
+vetores de 80 posições, com terminador nulo, aceitando no máximo 79 caracteres.
+</p>
+<p>
+Os dados ficam na estrutura <code>Registro</code>, declarada em <code>bst.h</code>. A árvore é formada
+por nós do tipo <code>NoBST</code>, cada um com um registro e dois ponteiros, para o filho esquerdo e
+para o filho direito. A estrutura linear é uma lista encadeada simples, com nós do tipo
+<code>NoLista</code>, que guardam apenas um identificador inteiro e o ponteiro para o próximo nó.
+A lista mantém ponteiros para o início e para o fim, o que permite inserir no fim em tempo constante.
+</p>
+<pre>typedef struct {
+    int id;
+    char nome_equipamento[TAMANHO_TEXTO];
+    char tipo_equipamento[TAMANHO_TEXTO];
+    char localizacao[TAMANHO_TEXTO];
+} Registro;
+
+typedef struct NoBST {
+    Registro registro;
+    struct NoBST *filho_esquerdo;
+    struct NoBST *filho_direito;
+} NoBST;</pre>
+<p>
+A leitura de entrada é feita sempre com <code>fgets</code> seguida de <code>strtol</code>, e não com
+<code>scanf</code>. Assim é possível rejeitar texto não numérico, números seguidos de caracteres
+inválidos, como <code>12x</code>, e valores que não cabem em <code>int</code>, verificando o
+ponteiro de fim da conversão e a variável <code>errno</code>. A mesma rotina de leitura de inteiro é
+usada pelo menu, pelo identificador da árvore e pelo identificador da lista.
+</p>
+
+<h2>2. Funcionamento da árvore binária de busca</h2>
+<p>
+A árvore binária de busca mantém, para todo nó, a propriedade de que os registros da subárvore
+esquerda têm identificador menor e os da subárvore direita têm identificador maior. As operações são
+implementadas por funções recursivas em <code>bst.c</code>, com a interface pública em
+<code>bst.h</code>.
+</p>
+<h3>2.1 Inserção</h3>
+<p>
+A inserção desce pela árvore comparando o identificador do novo registro com o identificador do nó
+atual e segue para a esquerda ou para a direita. Quando chega a um ponteiro nulo, aloca um nó com
+<code>malloc</code>. Se o identificador já existir, a função devolve a árvore sem alteração e informa
+a duplicidade ao chamador por meio de um parâmetro de status, que também distingue falha de alocação.
+</p>
+<h3>2.2 Busca</h3>
+<p>
+A busca é iterativa. Em cada passo compara o identificador procurado com o do nó atual e desce para
+um dos lados; termina ao encontrar o registro ou ao atingir um ponteiro nulo. O menu usa a busca para
+avisar quando o identificador não está cadastrado, antes de tentar remover.
+</p>
+<h3>2.3 Remoção</h3>
+<p>
+A remoção trata os três casos clássicos. Sem filhos, o nó é liberado e o ponteiro do pai recebe
+<code>NULL</code>. Com um filho, o filho ocupa o lugar do nó removido. Com dois filhos, é localizado o
+menor nó da subárvore direita, que é o sucessor em ordem do nó removido; o registro do sucessor é
+copiado para o nó removido e a remoção continua na subárvore direita para eliminar o nó do sucessor,
+que tem no máximo um filho.
+</p>
+<pre>NoBST *bst_remover(NoBST *raiz, int id)
+{
+    ...
+    no_sucessor = menor_no_da_subarvore(raiz->filho_direito);
+    raiz->registro = no_sucessor->registro;
+    raiz->filho_direito = bst_remover(raiz->filho_direito, no_sucessor->registro.id);
+    return raiz;
+}</pre>
+<p>
+Copiar o registro em vez de trocar os ponteiros entre os nós evita erros de religação e garante que
+cada nó seja liberado exatamente uma vez com <code>free</code>.
+</p>
+<h3>2.4 Listagem em ordem</h3>
+<p>
+A listagem é uma travessia em ordem: visita a subárvore esquerda, imprime o nó e visita a subárvore
+direita. Como a árvore é de busca, a saída sai em ordem crescente de identificador, o que também serve
+de conferência de que as inserções e remoções mantiveram a propriedade.
+</p>
+
+<h2>3. Funcionamento da lista encadeada</h2>
+<p>
+A lista guarda identificadores inteiros de forma independente da árvore. Os identificadores não
+precisam existir na BST, podem se repetir e permanecem na lista mesmo depois de o registro
+correspondente ser removido da árvore, conforme o enunciado. As operações estão em
+<code>estrutura.c</code>.
+</p>
+<ul>
+  <li><strong>Inserção no fim:</strong> o ponteiro para o fim permite criar o nó e ligá-lo em tempo
+  constante, sem percorrer a lista. Quando a lista está vazia, início e fim passam a apontar para o
+  novo nó.</li>
+  <li><strong>Remoção do início:</strong> guarda o ponteiro do segundo nó, libera o primeiro e
+  atualiza o início; se a lista ficar vazia, o ponteiro de fim também volta a <code>NULL</code>. Em
+  lista vazia a função apenas informa o usuário, sem encerrar o programa.</li>
+  <li><strong>Exibição:</strong> percorre a lista do início ao fim imprimindo os identificadores.</li>
+  <li><strong>Liberação:</strong> percorre a lista guardando o próximo nó antes de cada
+  <code>free</code>, evitando uso de memória já liberada.</li>
+</ul>
+
+<h2>4. Exemplos de testes</h2>
+<p>
+Os testes foram registrados em <code>tests/roteiro-testes.md</code>, com o arquivo de entrada
+<code>tests/entrada_teste.txt</code> e 33 casos. A tabela resume os casos mais relevantes, executados
+sobre a árvore da figura abaixo, formada pelos identificadores 50, 30, 70, 20, 40, 60, 80 e 65.
+</p>
+<pre>            50
+           /  \
+         30    70
+        / \   /  \
+       20 40 60  80
+              \
+              65</pre>
+<table>
+  <thead>
+    <tr><th>Caso</th><th>Entrada</th><th>Esperado</th><th>Obtido</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Inserção válida</td><td>ID 50, Roteador principal, Cisco, Bloco A</td><td>Cadastrar</td><td>Registro cadastrado</td></tr>
+    <tr><td>ID duplicado</td><td>ID 50 novamente</td><td>Rejeitar</td><td>ID 50 ja cadastrado</td></tr>
+    <tr><td>ID zero, negativo, <code>abc</code>, <code>12x</code>, <code>99999999999</code></td><td>um por vez</td><td>Rejeitar</td><td>ID invalido</td></tr>
+    <tr><td>Texto vazio, só espaços, 80 caracteres</td><td>um por vez</td><td>Rejeitar</td><td>Nome invalido</td></tr>
+    <tr><td>Texto com 79 caracteres</td><td>79 letras A</td><td>Cadastrar</td><td>Registro cadastrado</td></tr>
+    <tr><td>Remoção de folha</td><td>ID 20</td><td>Remover</td><td>Registro 20 removido</td></tr>
+    <tr><td>Remoção com um filho</td><td>ID 60 (filho 65)</td><td>Remover</td><td>Registro 60 removido</td></tr>
+    <tr><td>Remoção com dois filhos</td><td>ID 70 (sucessor 80)</td><td>Remover</td><td>Registro 70 removido</td></tr>
+    <tr><td>Listagem em ordem após remoções</td><td>opção 4</td><td>30, 40, 50, 65, 80</td><td>30, 40, 50, 65, 80</td></tr>
+    <tr><td>Lista com IDs repetidos</td><td>50, 50, 7</td><td>Aceitar</td><td>50, 50, 7</td></tr>
+    <tr><td>Remoção de lista vazia</td><td>opção 6</td><td>Avisar</td><td>Estrutura linear vazia</td></tr>
+    <tr><td>Remoção de árvore vazia</td><td>ID 10</td><td>Avisar</td><td>Arvore vazia</td></tr>
+  </tbody>
+</table>
+<p>
+O caso do texto com 79 caracteres confirma o limite exato do campo, e o caso de 80 caracteres
+confirma a rejeição. O roteiro completo também testa busca de identificador existente e inexistente,
+opções de menu inválidas e o encerramento do programa.
+</p>
+
+<h2>5. Análise de complexidade</h2>
+<table>
+  <thead>
+    <tr><th>Operação</th><th>Estrutura</th><th>Custo</th><th>Justificativa</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Inserir, buscar, remover</td><td>BST</td><td>O(h)</td><td>uma comparação por nível percorrido</td></tr>
+    <tr><td>Listar em ordem</td><td>BST</td><td>O(n)</td><td>cada nó é visitado uma vez</td></tr>
+    <tr><td>Inserir no fim</td><td>Lista</td><td>O(1)</td><td>ponteiro direto para o último nó</td></tr>
+    <tr><td>Remover do início</td><td>Lista</td><td>O(1)</td><td>ponteiro direto para o primeiro nó</td></tr>
+    <tr><td>Exibir</td><td>Lista</td><td>O(n)</td><td>percorre todos os nós</td></tr>
+  </tbody>
+</table>
+<p>
+Nas operações da árvore, <code>h</code> é a altura. Em uma árvore equilibrada, <code>h</code> é
+O(log n) e as operações custam O(log n). Como a implementação não faz balanceamento, o pior caso é a
+árvore degenerada, que se comporta como uma lista e leva as operações a O(n); a inserção em ordem
+crescente de identificadores produz exatamente esse caso. A busca, a inserção e a remoção usam
+memória O(1) além da pilha de recursão, que é O(h). A listagem usa O(h) de pilha e a lista encadeada
+usa O(n) de memória para n identificadores.
+</p>
+
+<h2>6. Conclusão e limitações</h2>
+<p>
+O programa cumpre os requisitos do tema A: cadastro em BST com inserção, busca, remoção dos três
+casos e listagem em ordem, além de uma lista encadeada própria para identificadores independentes.
+As entradas são validadas antes de chegar às estruturas, e toda a memória alocada é liberada ao
+encerrar.
+</p>
+<p>
+A principal limitação é a ausência de balanceamento na árvore. Com entradas já ordenadas, a altura
+cresce linearmente e o desempenho cai para O(n). Uma evolução natural seria usar uma árvore AVL ou
+rubro-negra, ao custo de rotações na inserção e na remoção. Outra limitação é o tamanho fixo dos
+campos de texto, de 79 caracteres, definido pelo enunciado. A remoção com dois filhos copia o
+registro do sucessor, o que é simples e correto, mas troca os dados de posição na árvore.
+</p>
+
+<h2>7. Uso de inteligência artificial</h2>
+<p class="nota">
+Ferramenta usada: assistente de código OpenCode. Finalidade: revisão do enunciado, apoio na
+estrutura inicial dos arquivos e revisão do roteiro de testes. O uso não substitui a elaboração
+individual: a conferência dos resultados, a explicação do funcionamento e a defesa do código são
+feitas pelo aluno.
+</p>
+
+</body>
+</html>
