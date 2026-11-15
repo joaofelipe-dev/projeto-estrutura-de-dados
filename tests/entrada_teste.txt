@@ -1,0 +1,115 @@
+1
+50
+Roteador principal
+Cisco
+Bloco A
+1
+30
+Switch de acesso
+HP
+Bloco A
+1
+70
+Access point
+Ubiquiti
+Bloco B
+1
+20
+Modem
+TP-Link
+Sala 1
+1
+40
+Switch distribuicao
+D-Link
+Bloco C
+1
+60
+Roteador secundario
+Cisco
+Bloco B
+1
+80
+Firewall
+Fortinet
+Datacenter
+1
+65
+Access point corredor
+Ubiquiti
+Bloco C
+1
+50
+Roteador repetido
+Cisco
+Bloco A
+1
+0
+1
+-5
+1
+abc
+1
+12x
+1
+99999999999
+1
+99
+
+1
+99
+   
+1
+99
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+1
+100
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+Equipamento com nome no limite
+Sala 3
+2
+50
+2
+999
+2
+abc
+4
+3
+20
+3
+60
+3
+70
+3
+999
+4
+5
+50
+5
+50
+5
+7
+7
+6
+6
+6
+7
+6
+3
+30
+3
+40
+3
+65
+3
+80
+3
+50
+3
+100
+4
+3
+10
+9
+abc
+0
